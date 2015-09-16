@@ -26,6 +26,7 @@ class LearningSwitch(DynamicPolicy):
         # TODO: Initialize your forwarding tables. Create this however you wish.
         # Couple of suggestions: Dictionary of dictionaries, Dictionary of 
         # tuples. 
+        self.forwardingTable = {} 
 
         # NOTE: (Python tip) if you create a variable like this...
         #    foo = 42
@@ -60,6 +61,10 @@ class LearningSwitch(DynamicPolicy):
         # called, creating a break between each set of forwarding tables.
         # end_fwd_table() need only be called at the very end - not after each
         # entry.
+        for switchNum in self.forwardingTable:
+            for macaddr in self.forwardingTable[switchNum]:
+                switchPort = self.forwardingTable[switchNum][macaddr]
+                write_forwarding_entry(switchNum, switchPort, macaddr)
 
         # After looping through the forwarding table(s), finish up with a break
         # in the log file.
@@ -71,6 +76,12 @@ class LearningSwitch(DynamicPolicy):
 
         # TODO - Create a new entry in the fowarding table. Use the functions 
         # in the second half of helpers to simplify all your work.
+        macaddr = get_src_mac(pkt).__repr__()
+        inport = get_inport(pkt)
+        switchNum = get_switch(pkt)
+        if switchNum not in self.forwardingTable:
+            self.forwardingTable[switchNum] = {}
+        self.forwardingTable[switchNum][macaddr] = inport
 
         # Print out the switch tables:
         self.print_switch_tables()
@@ -91,9 +102,11 @@ class LearningSwitch(DynamicPolicy):
         # TODO: Example code. You will need to edit this based on how you're 
         # storing your policies. You should only have to replace the details in
         # rule entries.
-        rule1 = 1, "00:00:00:00:00:01", 3
-        rule2 = 1, "00:00:00:00:00:02", 2
-        for rule in (rule1, rule2):
+        rules = []
+        for switchNum in self.forwardingTable:
+            for macaddr in self.forwardingTable[switchNum]:
+                rules.append((switchNum, macaddr, self.forwardingTable[switchNum][macaddr]))
+        for rule in rules:
             if new_policy == None:
                 # First entry, prime the pump
                 new_policy = (match(switch=int(rule[0]), dstmac=(rule[1])) >>

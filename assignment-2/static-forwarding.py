@@ -25,6 +25,9 @@ class StaticSwitch(Policy):
 
         # TODO: Set up forwarding tables. Create this however you wish. As
         # a suggestion, using a list of tuples will work.
+        self.forwardingTable = {1:{"00:00:00:00:00:01":1, "00:00:00:00:00:02":2, "00:00:00:00:00:03":3,\
+                          "00:00:00:00:00:04":3}, 2:{"00:00:00:00:00:01":3, "00:00:00:00:00:02":3,\
+                          "00:00:00:00:00:03":1, "00:00:00:00:00:04":2}}
 
         # NOTE: (Python tip) If you create a variable like this...
         #    foo = 42
@@ -49,7 +52,9 @@ class StaticSwitch(Policy):
         #
         # Loop through table entries using write_forwarding_entry() from
         # helpers.py
-
+        for switchNum in self.forwardingTable:
+            for macaddr in self.forwardingTable[switchNum]:
+                write_forwarding_entry(switchNum, self.forwardingTable[switchNum][macaddr], macaddr)
 
     def build_policy(self):
         """ 
@@ -61,8 +66,14 @@ class StaticSwitch(Policy):
         subpolicies = []
 
         # TODO: Rework below based on how you created your forwarding tables.
-        subpolicies.append(match(switch=1, dstmac="00:00:00:00:00:01") >> fwd(3))
+        subpolicies.append(match(switch=1, dstmac="00:00:00:00:00:01") >> fwd(1))
         subpolicies.append(match(switch=1, dstmac="00:00:00:00:00:02") >> fwd(2))
+        subpolicies.append(match(switch=1, dstmac="00:00:00:00:00:03") >> fwd(3))
+        subpolicies.append(match(switch=1, dstmac="00:00:00:00:00:04") >> fwd(3))
+        subpolicies.append(match(switch=2, dstmac="00:00:00:00:00:01") >> fwd(3))
+        subpolicies.append(match(switch=2, dstmac="00:00:00:00:00:02") >> fwd(3))
+        subpolicies.append(match(switch=2, dstmac="00:00:00:00:00:03") >> fwd(1))
+        subpolicies.append(match(switch=2, dstmac="00:00:00:00:00:04") >> fwd(2))
 
         # NOTE: the following lines will flood for MAC broadcasts (to
         # ff:ff:ff:ff:ff:ff). You need to include something like this in order
